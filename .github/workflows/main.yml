@@ -1,0 +1,151 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'input new release tag'
+        required: true
+        type: string
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    name: Build Python
+    # The type of runner that the job will run on
+    #runs-on: self-hosted
+    runs-on: macos-latest
+    permissions:
+        contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      - name: Git Clone Action
+        uses: sudosubin/git-clone-action@v1.0.1
+        with:
+          # Repository owner and name. Ex: sudosubin/git-clone-action
+          repository: PythonSwiftLink/Python-Apple-support
+          ref: "3.11"
+          path: PythonApple
+      
+      - name: Clone PythonCore
+        uses: sudosubin/git-clone-action@v1.0.1
+        with:
+          # Repository owner and name. Ex: sudosubin/git-clone-action
+          repository: PythonSwiftLink/PythonCore
+          ref: "master"
+          path: PythonCore
+      
+      - name: brew installs
+        run: |
+          brew tap PythonSwiftLink/tools
+          brew install swiftpackagegen
+
+      # - name: make python iOS
+      #   working-directory: ./PythonApple
+      #   run: make iOS
+
+      # - name: make python macOS
+      #   working-directory: ./PythonApple
+      #   run: make macOS
+            
+      - name: create multiplatform xcframework
+        run: |
+          mkdir -p export/ios
+          mkdir -p export/macos
+          IOS_XC=export/ios/Python.xcframework
+          MAC_XC=export/macos/Python.xcframework
+          tar -xzvf PythonApple/dist/Python-3.11-iOS-support.custom.tar.gz -C export/ios
+          tar -xzvf PythonApple/dist/Python-3.11-macOS-support.custom.tar.gz -C export/macos
+          
+          cp -rf $MAC_XC/macos-arm64_x86_64 $IOS_XC/
+          cp -f pyInfo.plist $IOS_XC/Info.plist
+          
+          cp -f template/module.modulemap $IOS_XC/macos-arm64_x86_64/Headers/
+          cp -f template/module.modulemap $IOS_XC/ios-arm64/Headers/
+          cp -f template/module.modulemap $IOS_XC/ios-arm64_x86_64-simulator/Headers/
+
+
+      - name: zip xcframework
+        working-directory: export/ios
+        run: zip -r Python.zip Python.xcframework
+
+      - name: zip ios python-stdlib
+        working-directory: export/ios
+        run: zip -r ios-python-stdlib.zip python-stdlib
+        #run: mv -f python-stdlib.zip ios-python-stdlib.zip
+      
+      - name: zip mac python-stdlib
+        working-directory: export/macos
+        run: zip -r macos-python-stdlib.zip python-stdlib
+        #run: mv -f python-stdlib.zip macos-python-stdlib.zip
+      
+      - name: move items to output
+        run: |
+            mkdir -p output/
+            cp -f export/ios/Python.zip output/
+            cp -f export/ios/ios-python-stdlib.zip output/
+            cp -f export/macos/macos-python-stdlib.zip output/     
+            
+      - name: update package.swift
+        run: |
+          SwiftPackageGen \
+            generate \
+            ./PythonCore.yml \
+            ${{ github.event.inputs.tag }} \
+            --input PythonCore/Package.swift \
+            --output output/PyCorePackage.swift
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: release-output
+          path: ./output
+
+  create_package:
+    name: Release Packages
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: release-output
+      
+      - name: Git Clone PythonCore
+        uses: sudosubin/git-clone-action@v1.0.1
+        with:
+          repository: PythonSwiftLink/PythonCore
+          ref: "master"
+          path: PythonCore
+          
+      - name: update PythonCore
+        run: mv -f PyCorePackage.swift PythonCore/Package.swift
+        
+      # commit new package to kivypythoncore/master
+      - name: commit Package.swift to PythonCore master
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.Homebrew }}
+        with:
+          source-directory: './PythonCore'
+          destination-github-username: 'pythonswiftlink'
+          destination-repository-name: 'PythonCore'
+          user-email: pythonswiftlink@gmail.com
+          target-branch: master
+      
+      - name: release PythonCore
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "Python.zip, ios-python-stdlib.zip, macos-python-stdlib.zip"
+          tag: ${{ github.event.inputs.tag }}
+          repo: PythonCore
+          token: ${{ secrets.Homebrew }}
+          allowUpdates: true
