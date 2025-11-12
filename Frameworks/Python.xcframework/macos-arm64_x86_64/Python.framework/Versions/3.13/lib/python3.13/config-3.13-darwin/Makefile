@@ -29,10 +29,10 @@ MODLIBS=           $(LOCALMODLIBS) $(BASEMODLIBS)
 
 # === Variables set by configure
 VERSION=	3.13
-srcdir=		/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build_source
-VPATH=		/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build_source
-abs_srcdir=	/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build_source
-abs_builddir=	/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/_bld/python
+srcdir=		/Users/nad/build_macos_installer/installer/variant/binaries/build_source
+VPATH=		/Users/nad/build_macos_installer/installer/variant/binaries/build_source
+abs_srcdir=	/Users/nad/build_macos_installer/installer/variant/binaries/build_source
+abs_builddir=	/Users/nad/build_macos_installer/installer/variant/binaries/build/_bld/python
 
 
 CC=		clang
@@ -77,7 +77,7 @@ INSTALL_DATA=	${INSTALL} -m 644
 # rather than figuring out exactly which, we always give them executable mode.
 INSTALL_SHARED= ${INSTALL} -m 755
 
-MKDIR_P=	/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build_source/install-sh -c -d
+MKDIR_P=	/Users/nad/build_macos_installer/installer/variant/binaries/build_source/install-sh -c -d
 
 MAKESETUP=      $(srcdir)/Modules/makesetup
 
@@ -178,7 +178,7 @@ EXPORTSFROM=
 
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		
-BUILDEXE=	.exe
+BUILDEXE=	
 
 # Name of the patch file to apply for app store compliance
 APP_STORE_COMPLIANCE_PATCH=
@@ -213,7 +213,7 @@ LIPO_32BIT_FLAGS=
 LIPO_INTEL64_FLAGS=-extract x86_64
 
 # Environment to run shared python without installed libraries
-RUNSHARED=       DYLD_FRAMEWORK_PATH=/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/_bld/python
+RUNSHARED=       DYLD_FRAMEWORK_PATH=/Users/nad/build_macos_installer/installer/variant/binaries/build/_bld/python
 
 # ensurepip options
 ENSUREPIP=      no
@@ -305,19 +305,19 @@ MODULE__BLAKE2_STATE=yes
 MODULE__BLAKE2_CFLAGS=
 MODULE__BLAKE2_LDFLAGS=
 MODULE__CTYPES_STATE=yes
-MODULE__CTYPES_CFLAGS=-fno-strict-overflow -I/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1 -DUSING_MALLOC_CLOSURE_DOT_C=1
+MODULE__CTYPES_CFLAGS=-fno-strict-overflow -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1 -DUSING_MALLOC_CLOSURE_DOT_C=1
 MODULE__CTYPES_LDFLAGS=-lffi -ldl
 MODULE__CURSES_STATE=yes
-MODULE__CURSES_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -D_XOPEN_SOURCE_EXTENDED=1
-MODULE__CURSES_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses
+MODULE__CURSES_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -D_XOPEN_SOURCE_EXTENDED=1
+MODULE__CURSES_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses
 
 MODULE__CURSES_PANEL_STATE=yes
-MODULE__CURSES_PANEL_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -D_XOPEN_SOURCE_EXTENDED=1
-MODULE__CURSES_PANEL_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lpanel -L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses
+MODULE__CURSES_PANEL_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -D_XOPEN_SOURCE_EXTENDED=1
+MODULE__CURSES_PANEL_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lpanel -L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses
 
 MODULE__DECIMAL_STATE=yes
-MODULE__DECIMAL_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
-MODULE__DECIMAL_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lmpdec -lm
+MODULE__DECIMAL_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
+MODULE__DECIMAL_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lmpdec -lm
 MODULE__DBM_STATE=yes
 MODULE__DBM_CFLAGS=-DUSE_NDBM
 MODULE__DBM_LDFLAGS=
@@ -326,11 +326,11 @@ MODULE_READLINE_STATE=yes
 MODULE_READLINE_CFLAGS=
 MODULE_READLINE_LDFLAGS=-lreadline
 MODULE__SQLITE3_STATE=yes
-MODULE__SQLITE3_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -I$(srcdir)/Modules/_sqlite
-MODULE__SQLITE3_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lsqlite3
+MODULE__SQLITE3_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -I$(srcdir)/Modules/_sqlite
+MODULE__SQLITE3_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lsqlite3
 MODULE__TKINTER_STATE=yes
-MODULE__TKINTER_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -Wno-strict-prototypes -DWITH_APPINIT=1
-MODULE__TKINTER_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -ltcl -ltk
+MODULE__TKINTER_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include -Wno-strict-prototypes -DWITH_APPINIT=1
+MODULE__TKINTER_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -ltcl -ltk
 MODULE__UUID_STATE=yes
 MODULE__UUID_CFLAGS=
 MODULE__UUID_LDFLAGS=
@@ -344,14 +344,14 @@ MODULE__BZ2_STATE=yes
 MODULE__BZ2_CFLAGS=
 MODULE__BZ2_LDFLAGS=-lbz2
 MODULE__LZMA_STATE=yes
-MODULE__LZMA_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
-MODULE__LZMA_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -llzma
+MODULE__LZMA_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
+MODULE__LZMA_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -llzma
 MODULE__SSL_STATE=yes
-MODULE__SSL_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
-MODULE__SSL_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib  -lssl -lcrypto
+MODULE__SSL_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
+MODULE__SSL_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib  -lssl -lcrypto
 MODULE__HASHLIB_STATE=yes
-MODULE__HASHLIB_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
-MODULE__HASHLIB_LDFLAGS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib   -lcrypto
+MODULE__HASHLIB_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include
+MODULE__HASHLIB_LDFLAGS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib   -lcrypto
 MODULE__TESTCAPI_STATE=yes
 MODULE__TESTCAPI_LDFLAGS=
 MODULE__TESTCLINIC_STATE=yes
@@ -384,7 +384,7 @@ EXEMODE=	755
 FILEMODE=	644
 
 # configure script arguments
-CONFIG_ARGS=	 '--enable-framework' '--with-framework-name=Python' '--enable-universalsdk=/' '--with-universal-archs=universal2' '--enable-optimizations' '--with-lto=full' '--with-computed-gotos' '--enable-experimental-jit=no' '--without-ensurepip' '--with-system-libmpdec' '--with-openssl=/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local' 'PYTHON_FOR_REGEN=/opt/homebrew/opt/python@3.13/bin/python3.13' 'CURSES_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'CURSES_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses' 'PANEL_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'PANEL_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lpanel' 'LIBLZMA_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBLZMA_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -llzma' 'LIBMPDEC_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBMPDEC_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lmpdec -lm' 'LIBSQLITE3_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBSQLITE3_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lsqlite3' 'LIBZSTD_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBZSTD_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lzstd' 'TCLTK_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'TCLTK_LIBS=-L/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -ltcl -ltk' 'CC=clang'
+CONFIG_ARGS=	 '--enable-framework' '--with-framework-name=Python' '--enable-universalsdk=/' '--with-universal-archs=universal2' '--enable-optimizations' '--with-lto=full' '--with-computed-gotos' '--without-ensurepip' '--with-system-libmpdec' '--with-openssl=/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local' 'CURSES_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'CURSES_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lncurses' 'PANEL_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'PANEL_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lpanel' 'LIBLZMA_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBLZMA_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -llzma' 'LIBMPDEC_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBMPDEC_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lmpdec -lm' 'LIBSQLITE3_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'LIBSQLITE3_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -lsqlite3' 'TCLTK_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include' 'TCLTK_LIBS=-L/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/lib -ltcl -ltk' 'CC=clang'
 
 
 # Subdirectories with code
@@ -434,7 +434,7 @@ BUILDPYTHON=	python$(BUILDEXE)
 
 HOSTRUNNER= 
 
-PYTHON_FOR_REGEN?=/opt/homebrew/opt/python@3.13/bin/python3.13
+PYTHON_FOR_REGEN?=python3
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/update_file.py
 PYTHON_FOR_BUILD=./$(BUILDPYTHON) -E
 # Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
@@ -451,8 +451,8 @@ FREEZE_MODULE=$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py
 FREEZE_MODULE_DEPS=_bootstrap_python $(srcdir)/Programs/_freeze_module.py
 
 _PYTHON_HOST_PLATFORM=
-BUILD_GNU_TYPE=	aarch64-apple-darwin24.6.0
-HOST_GNU_TYPE=	aarch64-apple-darwin24.6.0
+BUILD_GNU_TYPE=	aarch64-apple-darwin25.0.0
+HOST_GNU_TYPE=	aarch64-apple-darwin25.0.0
 
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
@@ -1427,7 +1427,7 @@ PYTHON_HEADERS= \
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=-I/Users/ambv/Python/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBMPDEC_CFLAGS=-I/Users/nad/build_macos_installer/installer/variant/binaries/build/libraries/usr/local/include $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
