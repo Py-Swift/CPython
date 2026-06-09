@@ -103,7 +103,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Frameworks/Python.xcframework PythonHeaders/
-          git commit -m "Update Python.xcframework and PythonHeaders to BeeWare ${{ github.event.inputs.beeware_tag }}"
+          git diff --cached --quiet || git commit -m "Update Python.xcframework and PythonHeaders to BeeWare ${{ github.event.inputs.beeware_tag }}"
           git tag ${{ github.event.inputs.release_tag }}
           git push origin HEAD
           git push origin ${{ github.event.inputs.release_tag }}
