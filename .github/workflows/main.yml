@@ -49,11 +49,24 @@ jobs:
           echo "macOS xcframework: $MACOS_XC"
           echo "iOS   xcframework: $IOS_XC"
 
-          # Copy the iOS xcframework into Frameworks/, then add the macOS slice
+          # Rebuild clean xcframework with only .framework slices (no stdlib/bin/include bloat)
           rm -rf Frameworks/Python.xcframework
           mkdir -p Frameworks/Python.xcframework
-          rsync -a "$IOS_XC/" Frameworks/Python.xcframework/
-          rsync -a "$MACOS_XC/macos-arm64_x86_64" Frameworks/Python.xcframework/
+
+          # Copy build utilities from iOS xcframework
+          cp -R "$IOS_XC/build" Frameworks/Python.xcframework/
+
+          # iOS slices: only the Python.framework directory
+          for SLICE in ios-arm64 ios-arm64_x86_64-simulator; do
+            if [ -d "$IOS_XC/$SLICE/Python.framework" ]; then
+              mkdir -p "Frameworks/Python.xcframework/$SLICE"
+              cp -R "$IOS_XC/$SLICE/Python.framework" "Frameworks/Python.xcframework/$SLICE/"
+            fi
+          done
+
+          # macOS slice: only the Python.framework
+          mkdir -p Frameworks/Python.xcframework/macos-arm64_x86_64
+          cp -R "$MACOS_XC/macos-arm64_x86_64/Python.framework" Frameworks/Python.xcframework/macos-arm64_x86_64/
 
           # Rebuild Info.plist to include the macOS slice entry
           python3 - <<'PYEOF'
@@ -96,8 +109,7 @@ jobs:
 
       - name: Update PythonHeaders from macOS slice
         run: |
-          MACOS_HEADERS=$(find extract/macos/Python.xcframework/macos-arm64_x86_64 \
-            -path "*/include/python3.13" -type d | head -1)
+          MACOS_HEADERS="extract/macos/Python.xcframework/macos-arm64_x86_64/Python.framework/Versions/3.13/include/python3.13"
           echo "Copying headers from: $MACOS_HEADERS"
           rm -rf PythonHeaders
           mkdir -p PythonHeaders
@@ -113,4 +125,3 @@ jobs:
           git push origin HEAD
           git push origin ${{ github.event.inputs.release_tag }}
 
-          allowUpdates: true
