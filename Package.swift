@@ -168,11 +168,11 @@ func getTargets() -> [Target] {
                     publicHeadersPath: ".",
                     swiftSettings: [
                         .swiftLanguageMode(.v5),
-                    ],
-                    linkerSettings: [
-                        // -Xlinker wrapper is required for swiftc to forward these to ld correctly.
-                        .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"]),
                     ]
+                    // Note: -undefined dynamic_lookup is passed by pyswiftkit-builder
+                    // via `-Xlinker -undefined -Xlinker dynamic_lookup` on the swift build
+                    // command line, so this package stays free of unsafeFlags and can be
+                    // used as a remote SPM dependency.
                 )
             ]
         } else {
