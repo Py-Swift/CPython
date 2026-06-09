@@ -10,18 +10,15 @@ extern "C" {
 #ifndef CPython_h
 #define CPython_h
 
-// Platform-specific Python header inclusion
-// Note: Android PIP_MODE defines PIP_MODE via cSettings, so it falls through to
-// the CPATH branch below (same as macOS PIP_MODE).
+// Platform-specific Python header inclusion.
+// PIP_MODE is set as a cSetting define by CPython's Package.swift in all pip/cibuildwheel
+// build modes (macOS PIP_MODE, Android new-style PIP_MODE). It is NOT set in Xcode / xcframework mode.
 #if defined(__ANDROID__) && !defined(PIP_MODE)
+// Old Android: bundled PythonHeaders-android
 #include "../../PythonHeaders-android/Python.h"
 #include "../../PythonHeaders-android/datetime.h"
-#elif __has_include(<Python/Python.h>)
-// Normal Apple: xcframework headers available via binary target
-#include <Python/Python.h>
-#include <Python/datetime.h>
-#else
-// PIP_MODE: Python.h located via CPATH env var (-Xcc -I in setup.py / cibuildwheel)
+#elif defined(PIP_MODE)
+// PIP_MODE (macOS cibuildwheel or Android new-style): Python.h from CPATH env var.
 // On Android, bionic's pthread_types.h uses uint32_t/int32_t before stdint.h has
 // been pulled in by the Python.h include chain — include it explicitly first.
 #if defined(__ANDROID__)
@@ -29,6 +26,11 @@ extern "C" {
 #endif
 #include "Python.h"
 #include "datetime.h"
+#else
+// Normal Apple (Xcode, no PIP_MODE): use embedded Python.xcframework.
+// SPM binary target adds -F path/to/Frameworks so <Python/Python.h> resolves.
+#include <Python/Python.h>
+#include <Python/datetime.h>
 #endif
 
 extern PyObject* __Py_True__;

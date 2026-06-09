@@ -166,6 +166,12 @@ func getTargets() -> [Target] {
                     name: "CPython",
                     path: "Sources/CPython",
                     publicHeadersPath: ".",
+                    cSettings: [
+                        // PIP_MODE define tells CPython.h to use #include "Python.h" (from CPATH)
+                        // instead of #include <Python/Python.h> (xcframework). This is more
+                        // reliable than __has_include which can fail during Xcode's clang scanner.
+                        .define("PIP_MODE"),
+                    ],
                     swiftSettings: [
                         .swiftLanguageMode(.v5),
                     ]
