@@ -43,15 +43,17 @@ jobs:
 
       - name: Rebuild multiplatform xcframework
         run: |
-          MACOS_XC=$(find extract/macos -name "Python.xcframework" -maxdepth 2 | head -1)
-          IOS_XC=$(find extract/ios   -name "Python.xcframework" -maxdepth 2 | head -1)
+          # Both tarballs have Python.xcframework/ at their root
+          MACOS_XC="extract/macos/Python.xcframework"
+          IOS_XC="extract/ios/Python.xcframework"
           echo "macOS xcframework: $MACOS_XC"
           echo "iOS   xcframework: $IOS_XC"
 
-          # Copy the macOS slice into the iOS xcframework so it becomes multiplatform
+          # Copy the iOS xcframework into Frameworks/, then add the macOS slice
           rm -rf Frameworks/Python.xcframework
-          cp -R "$IOS_XC" Frameworks/Python.xcframework
-          cp -R "$MACOS_XC/macos-arm64_x86_64" Frameworks/Python.xcframework/
+          mkdir -p Frameworks/Python.xcframework
+          rsync -a "$IOS_XC/" Frameworks/Python.xcframework/
+          rsync -a "$MACOS_XC/macos-arm64_x86_64" Frameworks/Python.xcframework/
 
           # Rebuild Info.plist to include the macOS slice entry
           python3 - <<'PYEOF'
@@ -94,7 +96,7 @@ jobs:
 
       - name: Update PythonHeaders from macOS slice
         run: |
-          MACOS_HEADERS=$(find Frameworks/Python.xcframework/macos-arm64_x86_64 \
+          MACOS_HEADERS=$(find extract/macos/Python.xcframework/macos-arm64_x86_64 \
             -path "*/include/python3.13" -type d | head -1)
           echo "Copying headers from: $MACOS_HEADERS"
           rm -rf PythonHeaders
