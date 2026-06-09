@@ -68,43 +68,26 @@ jobs:
           mkdir -p Frameworks/Python.xcframework/macos-arm64_x86_64
           cp -R "$MACOS_XC/macos-arm64_x86_64/Python.framework" Frameworks/Python.xcframework/macos-arm64_x86_64/
 
-          # Rebuild Info.plist to include the macOS slice entry
+          # Rebuild Info.plist: start from iOS xcframework's plist, add macOS entry from macOS xcframework's plist
           python3 - <<'PYEOF'
-          import plistlib, os, glob
+          import plistlib
 
-          xc = "Frameworks/Python.xcframework"
-          slices = []
-          for d in sorted(os.listdir(xc)):
-              if not os.path.isdir(os.path.join(xc, d)) or d.startswith('.'):
-                  continue
-              fw = glob.glob(os.path.join(xc, d, "*.framework"))
-              if not fw:
-                  continue
-              fw = fw[0]
-              fw_name = os.path.basename(fw)
-              bundle_id = fw_name.replace(".framework", "")
-              triples = d.replace("_", "-").split("-") if "_" in d else [d]
-              # supported platforms from dir name
-              parts = d.split("-")
-              if "simulator" in d:
-                  platform = parts[1] + "-simulator"
-              else:
-                  platform = parts[1] if len(parts) > 1 else parts[0]
-              entry = {
-                  "BinaryPath": f"{d}/{fw_name}/{bundle_id}",
-                  "HeadersPath": f"{d}/{fw_name}/Headers",
-                  "LibraryIdentifier": d,
-                  "LibraryPath": f"{fw_name}",
-                  "SupportedArchitectures": parts[0].split("_") if "_" in parts[0] else [parts[0]],
-                  "SupportedPlatform": platform,
-              }
-              if "simulator" in d:
-                  entry["SupportedPlatformVariant"] = "simulator"
-              slices.append(entry)
-          info = {"AvailableLibraries": slices, "CFBundlePackageType": "XFWK", "XCFrameworkFormatVersion": "1.0"}
-          with open(os.path.join(xc, "Info.plist"), "wb") as f:
+          with open("extract/ios/Python.xcframework/Info.plist", "rb") as f:
+              info = plistlib.load(f)
+          with open("extract/macos/Python.xcframework/Info.plist", "rb") as f:
+              macos_info = plistlib.load(f)
+
+          # Find the macos-arm64_x86_64 entry from the macOS xcframework's plist
+          macos_entry = next(
+              e for e in macos_info["AvailableLibraries"]
+              if e["LibraryIdentifier"] == "macos-arm64_x86_64"
+          )
+          info["AvailableLibraries"].append(macos_entry)
+
+          with open("Frameworks/Python.xcframework/Info.plist", "wb") as f:
               plistlib.dump(info, f)
-          print(f"Wrote Info.plist with {len(slices)} slices: {[s['LibraryIdentifier'] for s in slices]}")
+          ids = [e["LibraryIdentifier"] for e in info["AvailableLibraries"]]
+          print(f"Wrote Info.plist with {len(ids)} slices: {ids}")
           PYEOF
 
       - name: Update PythonHeaders from macOS slice
