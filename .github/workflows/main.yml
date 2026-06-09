@@ -1,151 +1,114 @@
-# This is a basic workflow to help you get started with Actions
+# Updates the bundled Python.xcframework and PythonHeaders from a BeeWare
+# Python-Apple-support release.  Run manually and provide the release tag
+# (e.g. "3.13-b13") and the new CPython package version tag (e.g. "313.11.0").
 
-name: CI
+name: Update xcframework
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'input new release tag'
+      beeware_tag:
+        description: 'BeeWare Python-Apple-support tag (e.g. 3.13-b13)'
+        required: true
+        type: string
+      release_tag:
+        description: 'CPython package version tag (e.g. 313.11.0)'
         required: true
         type: string
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    name: Build Python
-    # The type of runner that the job will run on
-    #runs-on: self-hosted
+  update:
+    name: Update xcframework from BeeWare
     runs-on: macos-latest
     permissions:
-        contents: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.2'
-      - name: Git Clone Action
-        uses: sudosubin/git-clone-action@v1.0.1
-        with:
-          # Repository owner and name. Ex: sudosubin/git-clone-action
-          repository: PythonSwiftLink/Python-Apple-support
-          ref: "3.11"
-          path: PythonApple
-      
-      - name: Clone PythonCore
-        uses: sudosubin/git-clone-action@v1.0.1
-        with:
-          # Repository owner and name. Ex: sudosubin/git-clone-action
-          repository: PythonSwiftLink/PythonCore
-          ref: "master"
-          path: PythonCore
-      
-      - name: brew installs
+
+      - name: Download BeeWare tarballs
         run: |
-          brew tap PythonSwiftLink/tools
-          brew install swiftpackagegen
+          TAG="${{ github.event.inputs.beeware_tag }}"
+          # Asset filenames use just the suffix after the dash, e.g. "3.13-b13" → "b13"
+          SUFFIX="${TAG##*-}"
+          BASE="https://github.com/beeware/Python-Apple-support/releases/download/$TAG"
+          curl -L "$BASE/Python-3.13-macOS-support.$SUFFIX.tar.gz" -o macos.tar.gz
+          curl -L "$BASE/Python-3.13-iOS-support.$SUFFIX.tar.gz"   -o ios.tar.gz
 
-      # - name: make python iOS
-      #   working-directory: ./PythonApple
-      #   run: make iOS
-
-      # - name: make python macOS
-      #   working-directory: ./PythonApple
-      #   run: make macOS
-            
-      - name: create multiplatform xcframework
+      - name: Extract tarballs
         run: |
-          mkdir -p export/ios
-          mkdir -p export/macos
-          IOS_XC=export/ios/Python.xcframework
-          MAC_XC=export/macos/Python.xcframework
-          tar -xzvf PythonApple/dist/Python-3.11-iOS-support.custom.tar.gz -C export/ios
-          tar -xzvf PythonApple/dist/Python-3.11-macOS-support.custom.tar.gz -C export/macos
-          
-          cp -rf $MAC_XC/macos-arm64_x86_64 $IOS_XC/
-          cp -f pyInfo.plist $IOS_XC/Info.plist
-          
-          cp -f template/module.modulemap $IOS_XC/macos-arm64_x86_64/Headers/
-          cp -f template/module.modulemap $IOS_XC/ios-arm64/Headers/
-          cp -f template/module.modulemap $IOS_XC/ios-arm64_x86_64-simulator/Headers/
+          mkdir -p extract/macos extract/ios
+          tar -xzf macos.tar.gz -C extract/macos
+          tar -xzf ios.tar.gz   -C extract/ios
 
-
-      - name: zip xcframework
-        working-directory: export/ios
-        run: zip -r Python.zip Python.xcframework
-
-      - name: zip ios python-stdlib
-        working-directory: export/ios
-        run: zip -r ios-python-stdlib.zip python-stdlib
-        #run: mv -f python-stdlib.zip ios-python-stdlib.zip
-      
-      - name: zip mac python-stdlib
-        working-directory: export/macos
-        run: zip -r macos-python-stdlib.zip python-stdlib
-        #run: mv -f python-stdlib.zip macos-python-stdlib.zip
-      
-      - name: move items to output
+      - name: Rebuild multiplatform xcframework
         run: |
-            mkdir -p output/
-            cp -f export/ios/Python.zip output/
-            cp -f export/ios/ios-python-stdlib.zip output/
-            cp -f export/macos/macos-python-stdlib.zip output/     
-            
-      - name: update package.swift
+          MACOS_XC=$(find extract/macos -name "Python.xcframework" -maxdepth 2 | head -1)
+          IOS_XC=$(find extract/ios   -name "Python.xcframework" -maxdepth 2 | head -1)
+          echo "macOS xcframework: $MACOS_XC"
+          echo "iOS   xcframework: $IOS_XC"
+
+          # Copy the macOS slice into the iOS xcframework so it becomes multiplatform
+          rm -rf Frameworks/Python.xcframework
+          cp -R "$IOS_XC" Frameworks/Python.xcframework
+          cp -R "$MACOS_XC/macos-arm64_x86_64" Frameworks/Python.xcframework/
+
+          # Rebuild Info.plist to include the macOS slice entry
+          python3 - <<'PYEOF'
+          import plistlib, os, glob
+
+          xc = "Frameworks/Python.xcframework"
+          slices = []
+          for d in sorted(os.listdir(xc)):
+              if not os.path.isdir(os.path.join(xc, d)) or d.startswith('.'):
+                  continue
+              fw = glob.glob(os.path.join(xc, d, "*.framework"))
+              if not fw:
+                  continue
+              fw = fw[0]
+              fw_name = os.path.basename(fw)
+              bundle_id = fw_name.replace(".framework", "")
+              triples = d.replace("_", "-").split("-") if "_" in d else [d]
+              # supported platforms from dir name
+              parts = d.split("-")
+              if "simulator" in d:
+                  platform = parts[1] + "-simulator"
+              else:
+                  platform = parts[1] if len(parts) > 1 else parts[0]
+              entry = {
+                  "BinaryPath": f"{d}/{fw_name}/{bundle_id}",
+                  "HeadersPath": f"{d}/{fw_name}/Headers",
+                  "LibraryIdentifier": d,
+                  "LibraryPath": f"{fw_name}",
+                  "SupportedArchitectures": parts[0].split("_") if "_" in parts[0] else [parts[0]],
+                  "SupportedPlatform": platform,
+              }
+              if "simulator" in d:
+                  entry["SupportedPlatformVariant"] = "simulator"
+              slices.append(entry)
+          info = {"AvailableLibraries": slices, "CFBundlePackageType": "XFWK", "XCFrameworkFormatVersion": "1.0"}
+          with open(os.path.join(xc, "Info.plist"), "wb") as f:
+              plistlib.dump(info, f)
+          print(f"Wrote Info.plist with {len(slices)} slices: {[s['LibraryIdentifier'] for s in slices]}")
+          PYEOF
+
+      - name: Update PythonHeaders from macOS slice
         run: |
-          SwiftPackageGen \
-            generate \
-            ./PythonCore.yml \
-            ${{ github.event.inputs.tag }} \
-            --input PythonCore/Package.swift \
-            --output output/PyCorePackage.swift
+          MACOS_HEADERS=$(find Frameworks/Python.xcframework/macos-arm64_x86_64 \
+            -path "*/include/python3.13" -type d | head -1)
+          echo "Copying headers from: $MACOS_HEADERS"
+          rm -rf PythonHeaders
+          mkdir -p PythonHeaders
+          cp "$MACOS_HEADERS"/*.h PythonHeaders/
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: release-output
-          path: ./output
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Frameworks/Python.xcframework PythonHeaders/
+          git commit -m "Update Python.xcframework and PythonHeaders to BeeWare ${{ github.event.inputs.beeware_tag }}"
+          git tag ${{ github.event.inputs.release_tag }}
+          git push origin HEAD
+          git push origin ${{ github.event.inputs.release_tag }}
 
-  create_package:
-    name: Release Packages
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: release-output
-      
-      - name: Git Clone PythonCore
-        uses: sudosubin/git-clone-action@v1.0.1
-        with:
-          repository: PythonSwiftLink/PythonCore
-          ref: "master"
-          path: PythonCore
-          
-      - name: update PythonCore
-        run: mv -f PyCorePackage.swift PythonCore/Package.swift
-        
-      # commit new package to kivypythoncore/master
-      - name: commit Package.swift to PythonCore master
-        uses: cpina/github-action-push-to-another-repository@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.Homebrew }}
-        with:
-          source-directory: './PythonCore'
-          destination-github-username: 'pythonswiftlink'
-          destination-repository-name: 'PythonCore'
-          user-email: pythonswiftlink@gmail.com
-          target-branch: master
-      
-      - name: release PythonCore
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "Python.zip, ios-python-stdlib.zip, macos-python-stdlib.zip"
-          tag: ${{ github.event.inputs.tag }}
-          repo: PythonCore
-          token: ${{ secrets.Homebrew }}
           allowUpdates: true
