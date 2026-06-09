@@ -27,10 +27,13 @@ extern "C" {
 #include "Python.h"
 #include "datetime.h"
 #else
-// Normal Apple (Xcode, no PIP_MODE): use embedded Python.xcframework.
-// SPM binary target adds -F path/to/Frameworks so <Python/Python.h> resolves.
-#include <Python/Python.h>
-#include <Python/datetime.h>
+// Normal Apple (Xcode, no PIP_MODE): use bundled PythonHeaders/ from the CPython package.
+// Relative path from this header's location (Sources/CPython/) to package root PythonHeaders/.
+// This avoids a framework-style include (<Python/Python.h>) which requires the xcframework
+// to be staged to PackageFrameworks first — something Xcode's clang dependency scanner
+// does not wait for. The xcframework is still required as a dependency for linking.
+#include "../../PythonHeaders/Python.h"
+#include "../../PythonHeaders/datetime.h"
 #endif
 
 extern PyObject* __Py_True__;

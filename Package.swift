@@ -5,7 +5,7 @@ import PackageDescription
 import Foundation
 
 let processInfo = ProcessInfo.processInfo
-let pipMode = processInfo.environment["PIP_MODE"] != nil
+let pipMode = processInfo.environment["PIP_MODE"] == "1"
 
 
 enum BuildPlatform: String {
