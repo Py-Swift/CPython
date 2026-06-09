@@ -95,8 +95,7 @@ jobs:
           MACOS_HEADERS="extract/macos/Python.xcframework/macos-arm64_x86_64/Python.framework/Versions/3.13/include/python3.13"
           echo "Copying headers from: $MACOS_HEADERS"
           rm -rf PythonHeaders
-          mkdir -p PythonHeaders
-          cp "$MACOS_HEADERS"/*.h PythonHeaders/
+          cp -R "$MACOS_HEADERS" PythonHeaders
 
       - name: Commit and push
         run: |
