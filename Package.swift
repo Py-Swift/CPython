@@ -5,8 +5,49 @@ import PackageDescription
 import Foundation
 
 let processInfo = ProcessInfo.processInfo
-let pipMode = processInfo.environment["PIP_MODE"] == "1"
+let env = processInfo.environment
 
+enum PythonMode {
+    case pip
+    case android
+    case development
+    case normal
+    
+    static let shared = Self.current()
+    
+    static func current() -> Self {
+        if env["PIP_MODE"] == "1" { return .pip }
+        if env["PSK_DEVELOPMENT"] == "1" { return .development }
+        if env["SWIFT_ANDROID_HOME"] != nil { return .android }
+        return .normal
+    }
+    
+    var cSettings: [CSetting] {
+        switch self {
+        case .pip:
+            [.define("PIP_MODE")]
+        case .normal:
+            [.define("FRAMEWORK_MODE")]
+        case .android:
+            [.define("PIP_MODE")]
+        case .development:
+            []
+        }
+    }
+    
+    var linkerSettings: [LinkerSetting] {
+        switch self {
+        case .pip:
+            []
+        case .normal:
+            [.linkedFramework("Python")]
+        case .android:
+            []
+        case .development:
+            []
+        }
+    }
+}
 
 enum BuildPlatform: String {
     case apple
@@ -20,7 +61,7 @@ func getPlatform() -> BuildPlatform {
     if processInfo.environment["SWIFT_ANDROID_HOME"] != nil {
         return .android
     }
-
+    
     return .apple
 }
 
@@ -70,7 +111,8 @@ func getTargets() -> [Target] {
     let platform = getPlatform()
     switch platform {
     case .android:
-        if pipMode {
+        switch PythonMode.shared {
+        case .pip:
             // Android PIP_MODE: link against the running Python interpreter (for cibuildwheel).
             // No bundled headers — Python headers are located via the -Xcc -isystem flag.
             // PIP_MODE is defined so CPython.h skips the bundled-headers branch.
@@ -120,21 +162,21 @@ func getTargets() -> [Target] {
                     ]
                 )
             ]
-        } else {
+        default:
             // Old Android setup: Swift SDK configured with NDK sysroot,
             // bundled PythonHeaders-android, explicit libpython linkage.
             // via: swift sdk configure <sdk-name> <triple> --sdk-root-path <ndk-sysroot-path>
             // But C compilation also needs the sysroot include path
-
+            
             let cSettings: [CSetting] = [
                 .define("PY_SSIZE_T_CLEAN"),
                 // Use Android-specific Python headers
                 .headerSearchPath("../../PythonHeaders-android"),
             ]
-
+            
             // Note: Don't set -isysroot here - the Swift SDK for Android already configures
             // the sysroot correctly. Setting it again causes conflicts.
-
+            
             return [
                 .target(
                     name: "CPython",
@@ -153,7 +195,8 @@ func getTargets() -> [Target] {
     case .linux, .windows, .webassembly:
         fatalError("CPython package is not supported on \(platform) yet.")
     case .apple:
-        if pipMode {
+        switch PythonMode.shared {
+        case .pip:
             // PIP_MODE: link against the running Python interpreter (for cibuildwheel / pip installs).
             // No xcframework embedded — Python symbols resolve via -undefined dynamic_lookup at load time.
             //
@@ -175,7 +218,22 @@ func getTargets() -> [Target] {
                     // used as a remote SPM dependency.
                 )
             ]
-        } else {
+        case .normal:
+            return [
+                .target(
+                    name: "CPython",
+                    dependencies: [
+                        //"Python"
+                    ],
+                    path: "Sources/CPython",
+                    publicHeadersPath: ".",
+                    swiftSettings: [
+                        .swiftLanguageMode(.v5)
+                    ],
+                    linkerSettings: PythonMode.shared.linkerSettings
+                )
+            ]
+        default:
             // Normal mode: embed Python.xcframework (standard Swift package usage).
             let pythonBinaryTarget = Target.binaryTarget(
                 name: "Python",
