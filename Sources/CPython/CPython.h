@@ -3,12 +3,17 @@
 //  CPython
 //
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef CPython_h
 #define CPython_h
+
+// Swift targets with C++ interop import this as a C++ clang module. Python's own
+// headers include system headers inside `extern "C" {}`, which clang rejects for
+// modular headers by default (-Wmodule-import-in-extern-c). Those headers carry
+// their own linkage, so the diagnostic is safe to silence here.
+#ifdef __cplusplus
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
+#endif
 
 // Platform-specific Python header inclusion.
 // PIP_MODE is set as a cSetting define by CPython's Package.swift in all pip/cibuildwheel
@@ -40,6 +45,11 @@ extern "C" {
 #include "../../PythonHeaders/datetime.h"
 #endif
 
+#ifdef __cplusplus
+#pragma clang diagnostic pop
+extern "C" {
+#endif
+
 extern PyObject* __Py_True__;
 extern PyObject* __Py_False__;
 extern PyObject* __Py_None__;
@@ -51,8 +61,8 @@ void PyDateTime_Info(PyObject* o, int* year, int* month, int* day, int* hour, in
 
 
 
-#endif /* CPython_h */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* CPython_h */
