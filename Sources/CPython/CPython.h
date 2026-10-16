@@ -13,7 +13,12 @@ extern "C" {
 // Platform-specific Python header inclusion.
 // PIP_MODE is set as a cSetting define by CPython's Package.swift in all pip/cibuildwheel
 // build modes (macOS PIP_MODE, Android new-style PIP_MODE). It is NOT set in Xcode / xcframework mode.
-#if defined(__ANDROID__) && !defined(PIP_MODE)
+#if defined(__wasm__)
+// WebAssembly: Pyodide's headers (scripts/fetch_pyodide.py); the C API
+// itself is exported by Pyodide/pyodide.asm.wasm.
+#include "../../PythonHeaders-pyodide/Python.h"
+#include "../../PythonHeaders-pyodide/datetime.h"
+#elif defined(__ANDROID__) && !defined(PIP_MODE)
 // Old Android: bundled PythonHeaders-android
 #include "../../PythonHeaders-android/Python.h"
 #include "../../PythonHeaders-android/datetime.h"

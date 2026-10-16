@@ -1,0 +1,4 @@
+pyodide=0.29.5
+python=3.13.2
+emscripten=4.0.9
+abi=pyodide_2025_0_wasm32

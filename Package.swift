@@ -16,8 +16,8 @@ enum PythonMode {
     static let shared = Self.current()
     
     static func current() -> Self {
-        if env["PIP_MODE"] == "1" { return .pip }
         if env["PSK_DEVELOPMENT"] == "1" { return .development }
+        if env["PIP_MODE"] == "1" { return .pip }
         if env["SWIFT_ANDROID_HOME"] != nil { return .android }
         return .normal
     }
@@ -58,6 +58,11 @@ enum BuildPlatform: String {
 }
 
 func getPlatform() -> BuildPlatform {
+    // WebAssembly (`swift build --swift-sdk <version>_wasm`): the manifest
+    // can't see the SDK, so it's an explicit opt-in, as in the Nucleant packages.
+    if processInfo.environment["WASM_BUILD"] == "1" {
+        return .webassembly
+    }
     if processInfo.environment["SWIFT_ANDROID_HOME"] != nil {
         return .android
     }
@@ -192,7 +197,46 @@ func getTargets() -> [Target] {
                 )
             ]
         }
-    case .linux, .windows, .webassembly:
+    case .webassembly:
+        // Pyodide's Python (scripts/fetch_pyodide.py): CPython.h includes
+        // PythonHeaders-pyodide/, nothing is linked. Pyodide/pyodide.asm.wasm
+        // runs in the app's memory and table (Pyodide/pyodide.wasm-host.mjs,
+        // shipped with the app's resources), so the app:
+        //   - leaves Python's functions undefined — imports, which the host
+        //     passes Pyodide's own for (python-functions.txt lists them);
+        //   - defines Python's data: a zero-filled region the host loads
+        //     Pyodide's data and stack into, with each data symbol at its
+        //     address there (CPython+Pyodide.S), exported for the host;
+        //   - imports its memory and table, which the host creates and loads
+        //     Python into first, and exports the memory for the page;
+        //   - declares a maximum memory, as Pyodide's does, and a table
+        //     Python can grow;
+        //   - allocates with Python's malloc (CPython+Wasm.c).
+        let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
+        return [
+            .target(
+                name: "CPython",
+                path: ".",
+                sources: ["Sources/CPython"],
+                resources: [.copy("Pyodide")],
+                publicHeadersPath: "Sources/CPython",
+                swiftSettings: [
+                    .swiftLanguageMode(.v5),
+                ],
+                linkerSettings: [
+                    .unsafeFlags([
+                        "-Xlinker", "--allow-undefined-file=\(packageDir)/PythonHeaders-pyodide/python-functions.txt",
+                        "-Xlinker", "--export=__cpython_pyodide",
+                        "-Xlinker", "--import-memory",
+                        "-Xlinker", "--export-memory",
+                        "-Xlinker", "--import-table",
+                        "-Xlinker", "--growable-table",
+                        "-Xlinker", "--max-memory=4294967296",
+                    ]),
+                ]
+            )
+        ]
+    case .linux, .windows:
         fatalError("CPython package is not supported on \(platform) yet.")
     case .apple:
         switch PythonMode.shared {
